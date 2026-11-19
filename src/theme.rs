@@ -1,22 +1,25 @@
-//! Paleta Ryoku Kami · Grafito (ver vault: «Estilo visual Ryoku Kami»).
-//! El estado nunca va solo en color: cada color lleva icono y texto.
+//! Estilo Takumi (ver takumi-design, `src/takumi.rs`): monocromo estricto, sin color de acento.
+//! El estado nunca va solo en color: cada estado lleva icono y texto; lo importante se resalta
+//! por inversión (fondo tinta, texto fondo) o por peso, nunca con rojo/verde/ámbar.
+use crate::takumi::{GRISES, oscuro as tk};
 use ratatui::style::{Color, Modifier, Style};
 
-pub const PAPER: Color = Color::Rgb(0x21, 0x1D, 0x1A);
-pub const RAISED: Color = Color::Rgb(0x2A, 0x25, 0x21);
-pub const HIGH: Color = Color::Rgb(0x35, 0x2F, 0x2A);
-pub const INK: Color = Color::Rgb(0xEC, 0xE4, 0xD8);
-pub const INK_DIM: Color = Color::Rgb(0xC9, 0xC0, 0xB3);
-pub const INK_MUTED: Color = Color::Rgb(0xA6, 0x9D, 0x90);
-pub const INK_FAINT: Color = Color::Rgb(0x8F, 0x86, 0x7A);
-pub const LINE: Color = Color::Rgb(0x4B, 0x44, 0x3D);
-pub const AEGEAN: Color = Color::Rgb(0x8F, 0xBD, 0xD1); // secundario: información
-pub const GOLD: Color = Color::Rgb(0xD9, 0xA4, 0x41);
-pub const BRAND: Color = Color::Rgb(0xE2, 0x34, 0x2A);
-pub const BRAND_TEXT: Color = Color::Rgb(0xF4, 0x66, 0x5A);
-pub const ERROR: Color = Color::Rgb(0xF2, 0x7A, 0x70);
-pub const WARN: Color = Color::Rgb(0xF0, 0xB2, 0x5E);
-pub const OK: Color = Color::Rgb(0x7F, 0xD0, 0xAE);
+pub const PAPER: Color = tk::FONDO;
+pub const RAISED: Color = tk::ELEVADO;
+pub const HIGH: Color = tk::LINEA; // pista de barras y gráficos
+pub const INK: Color = tk::TINTA;
+pub const INK_DIM: Color = tk::TINTA_SUAVE;
+pub const INK_MUTED: Color = tk::TINTA_APAGADA;
+pub const INK_FAINT: Color = GRISES[3]; // 94: texto terciario y bordes de panel
+pub const LINE: Color = tk::LINEA_ALTA;
+// Antiguos colores de acento y de alerta: ahora son tinta en distinta intensidad.
+pub const AEGEAN: Color = tk::TINTA_SUAVE; // secundario: información
+pub const GOLD: Color = tk::TINTA; // destacado
+pub const BRAND: Color = tk::TINTA;
+pub const BRAND_TEXT: Color = tk::TINTA;
+pub const ERROR: Color = tk::TINTA;
+pub const WARN: Color = tk::TINTA_SUAVE;
+pub const OK: Color = tk::TINTA_SUAVE;
 
 pub fn base() -> Style {
     Style::new().fg(INK).bg(PAPER)
@@ -36,11 +39,23 @@ pub fn bold() -> Style {
 pub fn accent() -> Style {
     Style::new().fg(AEGEAN)
 }
-pub fn key_cap() -> Style {
+/// Inversión: seleccionado, pestaña activa y errores (fondo tinta, texto fondo).
+pub fn inverse() -> Style {
     Style::new()
-        .fg(PAPER)
-        .bg(INK_DIM)
+        .fg(tk::INVERSO_TINTA)
+        .bg(tk::INVERSO_FONDO)
         .add_modifier(Modifier::BOLD)
+}
+/// Estilo de un estado: los de fallo o aviso (`✕`, `▲`) van invertidos; el resto, en gris.
+pub fn state_style(label: &str, color: Color) -> Style {
+    if label.starts_with('✕') || label.starts_with('▲') {
+        inverse()
+    } else {
+        Style::new().fg(color)
+    }
+}
+pub fn key_cap() -> Style {
+    inverse()
 }
 
 /// Mezcla lineal entre dos colores RGB (t en 0..=1).
@@ -52,13 +67,13 @@ pub fn mix(a: Color, b: Color, t: f32) -> Color {
     Color::Rgb(f(ar, br), f(ag, bg), f(ab, bb))
 }
 
-/// Color de carga: verde → ámbar → rojo según el porcentaje.
+/// Color de carga: solo intensidad de gris (más carga, más claro).
 pub fn load_color(pct: f32) -> Color {
     if pct < 50.0 {
-        OK
+        INK_MUTED
     } else if pct < 80.0 {
-        WARN
+        INK_DIM
     } else {
-        ERROR
+        INK
     }
 }

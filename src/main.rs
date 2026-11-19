@@ -6,6 +6,8 @@ mod config;
 mod docker;
 mod input;
 mod model;
+#[allow(dead_code)] // copia íntegra de takumi-design; no se usan todos los tokens
+mod takumi;
 mod theme;
 mod ui;
 mod util;

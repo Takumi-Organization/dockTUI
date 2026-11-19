@@ -165,7 +165,7 @@ fn draw_header(f: &mut Frame, app: &mut App, area: Rect) {
         let w = text_width(&label) as u16;
         let active = *t == app.tab;
         let style = if active {
-            Style::new().fg(INK).bg(HIGH).add_modifier(Modifier::BOLD)
+            inverse()
         } else {
             Style::new().fg(INK_MUTED)
         };
@@ -175,11 +175,7 @@ fn draw_header(f: &mut Frame, app: &mut App, area: Rect) {
         spans.push(Span::styled(head, style));
         spans.push(Span::styled(
             format!("{count} "),
-            if active {
-                Style::new().fg(GOLD).bg(HIGH)
-            } else {
-                faint()
-            },
+            if active { inverse() } else { faint() },
         ));
         x += w;
     }
@@ -217,8 +213,8 @@ fn draw_header(f: &mut Frame, app: &mut App, area: Rect) {
             ]
         }
         Conn::Down(_) => vec![
-            vec![Span::styled("✕ sin conexión ", Style::new().fg(ERROR))],
-            vec![Span::styled("✕ ", Style::new().fg(ERROR))],
+            vec![Span::styled("✕ sin conexión ", inverse())],
+            vec![Span::styled("✕ ", inverse())],
         ],
         Conn::Connecting => vec![vec![Span::styled(
             format!("{} conectando ", spinner(app.tick, app.anim)),
@@ -341,10 +337,11 @@ fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
 
     // Línea de estado: aviso más reciente o contexto de la lista.
     let line = if let Some(t) = app.toasts.last() {
-        let (color, _) = match t.kind {
-            ToastKind::Ok => (OK, ()),
-            ToastKind::Err => (ERROR, ()),
-            ToastKind::Info => (AEGEAN, ()),
+        // Éxito: negrita; error: inversión (con su texto); información: gris suave.
+        let tstyle = match t.kind {
+            ToastKind::Ok => bold(),
+            ToastKind::Err => inverse(),
+            ToastKind::Info => dim(),
         };
         // Entrada deslizante: el texto «escribe» sus primeros 250 ms.
         let age = t.born.elapsed().as_millis() as usize;
@@ -358,10 +355,7 @@ fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
         };
         Line::from(vec![
             Span::raw(" "),
-            Span::styled(
-                truncate(&shown, w.saturating_sub(2)),
-                Style::new().fg(color).add_modifier(Modifier::BOLD),
-            ),
+            Span::styled(truncate(&shown, w.saturating_sub(2)), tstyle),
         ])
     } else {
         let tab = app.tab;

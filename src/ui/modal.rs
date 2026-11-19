@@ -169,14 +169,11 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
                     Span::styled(" $ docker ", Style::new().fg(GOLD)),
                     Span::styled(clip(&a.join(" "), inner.width.saturating_sub(12)), dim()),
                 ]),
-                Err(e) => Line::from(Span::styled(format!(" ▲ {e}"), Style::new().fg(WARN))),
+                Err(e) => Line::from(Span::styled(format!(" ▲ {e}"), bold())),
             };
             lines.push(preview);
             if let Some(e) = error {
-                lines.push(Line::from(Span::styled(
-                    format!(" ✕ {e}"),
-                    Style::new().fg(ERROR),
-                )));
+                lines.push(Line::from(Span::styled(format!(" ✕ {e}"), inverse())));
             } else {
                 lines.push(Line::raw(""));
             }

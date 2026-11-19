@@ -5,8 +5,8 @@ use ratatui::style::Color;
 
 /// Píxel art de la ballena (36×16). Cada carácter es un píxel; se pinta con medios bloques.
 fn whale_pixel(x: i32, y: i32, reveal: u64, eye_open: bool) -> Option<Color> {
-    let body = AEGEAN;
-    let belly = mix(AEGEAN, INK, 0.45);
+    let body = INK_MUTED;
+    let belly = mix(INK_MUTED, INK, 0.45);
     // Cuerpo: rangos de x por fila.
     let (a, b) = match y {
         9 => (4, 34),
@@ -43,7 +43,7 @@ fn whale_pixel(x: i32, y: i32, reveal: u64, eye_open: bool) -> Option<Color> {
         }
         // Aleta pectoral un poco más oscura.
         if (19..=24).contains(&x) && y >= 13 {
-            return Some(mix(AEGEAN, PAPER, 0.3));
+            return Some(mix(INK_MUTED, PAPER, 0.3));
         }
         return Some(if y >= 13 { belly } else { body });
     }
@@ -192,10 +192,7 @@ pub fn draw_down(f: &mut Frame, app: &App, area: Rect) {
         Line::from(Span::styled(format!("{z:>40}"), Style::new().fg(INK_MUTED))),
     );
     lines.push(Line::raw(""));
-    lines.push(Line::from(Span::styled(
-        format!("✕ {cause}"),
-        Style::new().fg(ERROR).add_modifier(Modifier::BOLD),
-    )));
+    lines.push(Line::from(Span::styled(format!("✕ {cause}"), inverse())));
     lines.push(Line::raw(""));
     for f in fix {
         lines.push(Line::from(vec![

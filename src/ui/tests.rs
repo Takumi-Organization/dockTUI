@@ -225,3 +225,47 @@ fn el_raton_cambia_de_pestana_y_selecciona_filas() {
     a.on_mouse(ev(a.hits.list.x + 3, row));
     assert!(a.detail.is_some());
 }
+
+/// Estilo Takumi: ninguna celda lleva color fuera de la escala de grises.
+fn assert_solo_grises(a: &mut App, w: u16, h: u16) {
+    use ratatui::style::Color;
+    let mut t = Terminal::new(TestBackend::new(w, h)).unwrap();
+    t.draw(|f| draw(f, a)).unwrap();
+    for cell in t.backend().buffer().content() {
+        for c in [cell.fg, cell.bg] {
+            assert!(
+                matches!(c, Color::Reset) || matches!(c, Color::Rgb(r, g, b) if r == g && g == b),
+                "color no gris {c:?} en {:?}",
+                cell.symbol()
+            );
+        }
+    }
+}
+
+#[test]
+fn toda_la_interfaz_es_monocroma() {
+    let mut a = app();
+    for t in Tab::ALL {
+        a.switch_tab(t);
+        assert_solo_grises(&mut a, 120, 30);
+        key(&mut a, KeyCode::Enter);
+        let n = {
+            let d = a.detail.as_ref().expect("abre el detalle");
+            a.detail_subtabs(d).len()
+        };
+        for i in 0..n {
+            a.set_sub(i);
+            a.on_tick();
+            assert_solo_grises(&mut a, 120, 30);
+        }
+        key(&mut a, KeyCode::Esc);
+    }
+    a.splash = true;
+    for tick in [0, 5, 20, 40, 200] {
+        a.tick = tick;
+        assert_solo_grises(&mut a, 120, 30);
+    }
+    a.splash = false;
+    a.conn = Conn::Down("sin demonio".into());
+    assert_solo_grises(&mut a, 120, 30);
+}

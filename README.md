@@ -11,7 +11,7 @@ Rust 2024 · Ratatui 0.30 · habla con el CLI `docker` (respeta contextos y `DOC
 
 ![Formulario de nuevo contenedor](docs/05-nuevo-contenedor.png)
 
-*Capturas reales de la propia aplicación (kitty/tmux, 120 columnas) con un proyecto de ejemplo, `mi-app`, con un `nginx` y un `caddy`.*
+*Capturas reales de la propia aplicación (tmux, 120 columnas, estilo Takumi) con un proyecto de ejemplo, `mi-app`, con un `nginx` y un `caddy` y un servicio que sale con código 137.*
 
 ## Instalar y usar
 
@@ -38,7 +38,7 @@ Pulsa `?` dentro para ver todos los atajos.
 
 ## Diseño
 
-Paleta **Ryoku Kami · Grafito**. El estado nunca va solo en color: siempre icono y texto (`● activo`, `✕ salió (137)`, `▲ no sano`). Animaciones: ola de cabecera que se agita cuando hay tareas, spinners braille, barras con destello (descargas/builds), barra indeterminada, destello de fila al cambiar de estado, splash de ballena en píxel art. `--no-anim` las desactiva.
+Estilo [Takumi](https://github.com/Takumi-Organization/takumi-design): monocromo estricto, fondo negro y solo grises, sin colores de acento ni de alerta. Lo seleccionado y la pestaña activa van por inversión (fondo claro, texto oscuro); los fallos y avisos (`✕`, `▲`) también se invierten, y los gráficos y barras distinguen por intensidad de gris. El estado nunca va solo en color: siempre icono y texto (`● activo`, `✕ salió (137)`, `▲ no sano`). Los tokens están en `src/takumi.rs` (copia de `dist/takumi.rs` de takumi-design) y `src/theme.rs` los asigna. Animaciones: ola de cabecera que se agita cuando hay tareas, spinners braille, barras con destello (descargas/builds), barra indeterminada, destello de fila al cambiar de estado, splash de ballena en píxel art. `--no-anim` las desactiva.
 
 ## Cómo funciona
 
@@ -59,7 +59,7 @@ main ─ bucle de eventos (33 ms con animación, 250 ms sin ella)
 ## Desarrollo
 
 ```sh
-cargo test        # 24 pruebas: modelo, Compose, formularios y dibujo con TestBackend en 7 tamaños
+cargo test        # 25 pruebas: modelo, Compose, formularios y dibujo con TestBackend en 7 tamaños (una exige que toda la interfaz sea solo gris)
 cargo clippy --all-targets
 ```
 
@@ -73,7 +73,7 @@ Las pruebas de dibujo recorren todas las pestañas, los detalles, los diálogos 
 
 ## Estado y límites
 
-- Versión 0.1. Verificado en Linux con Docker 29.9 y terminales con color verdadero; el ratón y macOS/Windows no se han probado a mano.
+- Versión 0.1. Verificado en Linux con Docker 29.9 y terminales con color verdadero (`cargo fmt`, `clippy -D warnings`, 25 pruebas y capturas reales en tmux del estilo Takumi); el ratón y macOS/Windows no se han probado a mano. Las capturas se renderizan desde la salida ANSI de tmux con un script propio.
 - El panel de **vista previa** solo aparece con 112 columnas o más.
 - Si lo lanzas desde una carpeta a la que llegas por un enlace simbólico, un proyecto Compose puede aparecer dos veces (una por la ruta real y otra por la del enlace).
 - Pendiente: otros terminales, contextos remotos y Podman, y explorar los archivos de un volumen.

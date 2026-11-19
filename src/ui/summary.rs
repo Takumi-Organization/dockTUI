@@ -34,7 +34,8 @@ pub fn home_short(p: &str) -> String {
 pub fn container(app: &App, c: &Container, full: bool) -> Vec<Line<'static>> {
     let now = now_secs();
     let (label, color) = state_look(c, app.tick, app.anim);
-    let mut state = vec![sp(label, color)];
+    let style = state_style(&label, color);
+    let mut state = vec![Span::styled(label, style)];
     if let (State::Running, Some(s)) = (c.state, c.started) {
         state.push(sp(
             format!("  ·  activo desde hace {}", uptime(now - s)),

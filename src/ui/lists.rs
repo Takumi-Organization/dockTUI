@@ -107,8 +107,8 @@ fn draw_list(f: &mut Frame, app: &mut App, area: Rect) {
     let table = Table::new(rows, widths)
         .header(header)
         .column_spacing(1)
-        .row_highlight_style(Style::new().bg(HIGH).add_modifier(Modifier::BOLD))
-        .highlight_symbol(Span::styled("▌", Style::new().fg(GOLD)));
+        .row_highlight_style(inverse())
+        .highlight_symbol(Span::styled("▌", Style::new().fg(INK)));
     let t = tab.idx();
     app.tables[t].select(Some(app.cursor[t]));
     f.render_stateful_widget(table, inner, &mut app.tables[t]);
@@ -227,7 +227,7 @@ fn containers_table(
             };
             let mut cells = vec![
                 mark_cell(app, Tab::Containers, &c.id),
-                Cell::from(Span::styled(label, Style::new().fg(color))),
+                Cell::from(Span::styled(label.clone(), state_style(&label, color))),
                 Cell::from(Span::styled(c.name.clone(), Style::new().fg(INK))),
             ];
             if show_image {
@@ -520,10 +520,11 @@ fn compose_table(
                     format!("{} {}", spinner(app.tick, app.anim), pd.label),
                     Style::new().fg(GOLD),
                 ),
-                None => Span::styled(
-                    format!("{icon} {} {}/{}", p.state_label(), p.running, p.total),
-                    Style::new().fg(color),
-                ),
+                None => {
+                    let txt = format!("{icon} {} {}/{}", p.state_label(), p.running, p.total);
+                    let st = state_style(&txt, color);
+                    Span::styled(txt, st)
+                }
             };
             let mut cells = vec![
                 mark_cell(app, Tab::Compose, &p.key()),

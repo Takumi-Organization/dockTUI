@@ -39,11 +39,7 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
         app.hits.subtabs.push((Rect::new(x, tabs_row.y, w, 1), i));
         spans.push(Span::styled(
             label,
-            if i == sub_i {
-                Style::new().fg(INK).bg(HIGH).add_modifier(Modifier::BOLD)
-            } else {
-                muted()
-            },
+            if i == sub_i { inverse() } else { muted() },
         ));
         x += w;
     }
@@ -79,7 +75,10 @@ fn title_of(app: &App, tab: Tab, key: &str) -> (String, Span<'static>) {
             .find(|c| c.id == key)
             .map(|c| {
                 let (l, col) = state_look(c, app.tick, app.anim);
-                (c.name.clone(), Span::styled(l, Style::new().fg(col)))
+                (
+                    c.name.clone(),
+                    Span::styled(l.clone(), state_style(&l, col)),
+                )
             })
             .unwrap_or_default(),
         Tab::Images => app
@@ -272,7 +271,7 @@ fn used_by(app: &App, list: &[(String, String)], empty: &str) -> Vec<Line<'stati
                 .map(|c| state_look(c, app.tick, app.anim))
                 .unwrap_or(("●".into(), OK));
             Line::from(vec![
-                Span::styled(format!(" {:<14}", label), Style::new().fg(color)),
+                Span::styled(format!(" {:<14}", label), state_style(&label, color)),
                 Span::styled(format!("{:<32}", name), Style::new().fg(INK)),
                 Span::styled(extra.clone(), muted()),
             ])
@@ -343,10 +342,7 @@ fn layers(app: &App, key: &str) -> Vec<Line<'static>> {
             format!("{} leyendo capas…", spinner(app.tick, app.anim)),
             muted(),
         ))],
-        Some(Err(e)) => vec![Line::from(Span::styled(
-            format!("✕ {e}"),
-            Style::new().fg(ERROR),
-        ))],
+        Some(Err(e)) => vec![Line::from(Span::styled(format!("✕ {e}"), inverse()))],
         Some(Ok(ls)) => {
             let max = ls.iter().map(|l| l.size).max().unwrap_or(1).max(1);
             let total: u64 = ls.iter().map(|l| l.size).sum();
@@ -422,15 +418,15 @@ fn json_value(v: &str) -> Span<'static> {
 /// Nivel de un mensaje: primero claves de logs estructurados (`"level":"error"`, `level=warn`)
 /// y, si no hay, las primeras palabras del mensaje. No busca «error» en cualquier parte:
 /// un SQL que menciona una tabla `Errors` no es un error.
-fn level_color(msg: &str) -> Color {
+fn level_color(msg: &str) -> Style {
     let low = msg.to_lowercase();
-    let word = |s: &str| -> Option<Color> {
+    let word = |s: &str| -> Option<Style> {
         let w: String = s.chars().take_while(|c| c.is_ascii_alphabetic()).collect();
         match w.as_str() {
-            "error" | "err" | "fatal" | "panic" | "critical" | "crit" | "severe" => Some(ERROR),
-            "warn" | "warning" => Some(WARN),
-            "debug" | "trace" | "dbg" => Some(INK_FAINT),
-            "info" | "information" | "notice" => Some(INK),
+            "error" | "err" | "fatal" | "panic" | "critical" | "crit" | "severe" => Some(inverse()),
+            "warn" | "warning" => Some(bold()),
+            "debug" | "trace" | "dbg" => Some(faint()),
+            "info" | "information" | "notice" => Some(dim()),
             _ => None,
         }
     };
@@ -461,13 +457,21 @@ fn level_color(msg: &str) -> Color {
     }
     if low.starts_with("traceback") || low.contains("panic:") || low.contains("unhandled exception")
     {
-        return ERROR;
+        return inverse();
     }
-    INK
+    dim()
 }
 
 fn service_color(name: &str) -> Color {
-    const P: [Color; 6] = [AEGEAN, GOLD, OK, BRAND_TEXT, WARN, INK_DIM];
+    // Sin color: seis intensidades de gris de la escala Takumi (más una por servicio).
+    const P: [Color; 6] = [
+        INK,
+        INK_DIM,
+        INK_MUTED,
+        crate::takumi::GRISES[3],
+        INK_DIM,
+        INK,
+    ];
     P[name
         .bytes()
         .fold(0usize, |a, b| a.wrapping_mul(31).wrapping_add(b as usize))
@@ -503,7 +507,7 @@ fn log_line(raw: &str, filter: &str) -> Line<'static> {
     if let Some(t) = ts {
         spans.push(Span::styled(format!("{t}  "), faint()));
     }
-    let color = level_color(msg);
+    let lvl = level_color(msg);
     if !filter.is_empty() {
         let low = msg.to_lowercase();
         let f = filter.to_lowercase();
@@ -513,16 +517,13 @@ fn log_line(raw: &str, filter: &str) -> Line<'static> {
             if !msg.is_char_boundary(s) || !msg.is_char_boundary(s + f.len()) {
                 break;
             }
-            spans.push(Span::styled(msg[at..s].to_string(), Style::new().fg(color)));
-            spans.push(Span::styled(
-                msg[s..s + f.len()].to_string(),
-                Style::new().fg(PAPER).bg(GOLD),
-            ));
+            spans.push(Span::styled(msg[at..s].to_string(), lvl));
+            spans.push(Span::styled(msg[s..s + f.len()].to_string(), inverse()));
             at = s + f.len();
         }
-        spans.push(Span::styled(msg[at..].to_string(), Style::new().fg(color)));
+        spans.push(Span::styled(msg[at..].to_string(), lvl));
     } else {
-        spans.push(Span::styled(msg.to_string(), Style::new().fg(color)));
+        spans.push(Span::styled(msg.to_string(), lvl));
     }
     Line::from(spans)
 }
@@ -553,7 +554,7 @@ fn draw_logs(f: &mut Frame, app: &mut App, area: Rect) {
             Style::new().fg(if ended { INK_MUTED } else { OK }),
         )
     } else {
-        Span::styled("❚❚ en pausa (f sigue)", Style::new().fg(WARN))
+        Span::styled("❚❚ en pausa (f sigue)", bold())
     });
     top.push(Span::styled(format!("   {n} líneas"), muted()));
     if ended {
@@ -766,10 +767,7 @@ fn draw_file(f: &mut Frame, app: &mut App, area: Rect) {
                     .find(|l| !l.contains("level=warning"))
                     .or(e.lines().next())
                     .unwrap_or("");
-                top.push(Span::styled(
-                    format!("   ✕ {}", clip(msg, 90)),
-                    Style::new().fg(ERROR),
-                ));
+                top.push(Span::styled(format!("   ✕ {}", clip(msg, 90)), inverse()));
             }
         }
     }
@@ -791,7 +789,7 @@ fn draw_file(f: &mut Frame, app: &mut App, area: Rect) {
             f.render_widget(
                 Paragraph::new(Span::styled(
                     format!(" ✕ No puedo leer el fichero: {e}"),
-                    Style::new().fg(ERROR),
+                    inverse(),
                 )),
                 body,
             );
