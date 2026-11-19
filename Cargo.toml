@@ -1,0 +1,16 @@
+[package]
+name = "docktui"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Sustituto de Docker Desktop para el terminal: contenedores, imágenes, volúmenes, redes y Compose"
+
+[dependencies]
+ratatui = "0.30.2"
+serde_json = "1"
+unicode-width = "0.2"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
